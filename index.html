@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#080c14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BYMA Trader">
+<title>BYMA Trader</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%23080c14' width='180' height='180' rx='40'/><text x='90' y='120' text-anchor='middle' font-size='100'>📊</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script crossorigin src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+<style>
+*{-webkit-tap-highlight-color:transparent;box-sizing:border-box}
+html,body{margin:0;padding:0;overflow-x:hidden}
+body{background:#080c14;color:#e2e8f0;font-family:'Space Grotesk',sans-serif}
+.m{font-family:'JetBrains Mono',monospace}
+.c{background:rgba(15,23,42,.7);border:1px solid rgba(51,65,85,.5);border-radius:12px;backdrop-filter:blur(8px)}
+.ci{background:rgba(15,23,42,.5);border:1px solid rgba(51,65,85,.3);border-radius:8px}
+.gg{box-shadow:0 0 20px rgba(16,185,129,.12)}.gr{box-shadow:0 0 20px rgba(239,68,68,.12)}
+.p{animation:p 2s infinite}@keyframes p{0%,100%{opacity:1}50%{opacity:.5}}
+input,select{background:rgba(15,23,42,.8);border:1px solid rgba(51,65,85,.5);color:#e2e8f0;border-radius:8px;padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:13px;outline:none;width:100%}
+input:focus,select:focus{border-color:#3b82f6}
+.b{padding:8px 16px;border-radius:8px;font-weight:500;font-size:13px;cursor:pointer;transition:all .2s;border:none;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.bp{background:#3b82f6;color:#fff}.bg{background:#059669;color:#fff}.br{background:#dc2626;color:#fff}
+.bx{background:transparent;color:#94a3b8;border:1px solid rgba(51,65,85,.5)}
+.sb{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:.5px}
+.fi{animation:fi .3s ease-in}@keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.ta{background:rgba(59,130,246,.15);border-color:#3b82f6;color:#60a5fa}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#0a0f1a}::-webkit-scrollbar-thumb{background:#1e293b;border-radius:2px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useCallback,useRef,useMemo}=React;
+const{AreaChart,Area,XAxis,YAxis,Tooltip,ResponsiveContainer}=Recharts;
+
+// ═══════════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════════
+const TICKERS_AR=["GGAL.BA","YPF.BA","PAM.BA","BMA.BA","SUPV.BA","CEPU.BA","EDN.BA","TGS.BA","LOMA.BA","TXAR.BA","ALUA.BA","COME.BA","CRES.BA","TRAN.BA","BYMA.BA","VALO.BA","MIRG.BA","BBAR.BA","TGNO4.BA","TECO2.BA","PAMP.BA","CGPA2.BA","HAVA.BA","SAMI.BA","BOLT.BA","GARO.BA","SEMI.BA","INVJ.BA","CARC.BA","MORI.BA","FERR.BA","GBAN.BA","BHIP.BA","AGRO.BA","MOLA.BA","IRSA.BA","CELU.BA","RIGO.BA","DYCA.BA","LONG.BA","POLL.BA","RICH.BA","INTR.BA","FIPL.BA","AUSO.BA","ROSE.BA","MTR.BA","METR.BA","CVH.BA","GRIM.BA"];
+const TICKERS_CEDEAR=["AAPL.BA","MSFT.BA","GOOGL.BA","AMZN.BA","META.BA","TSLA.BA","NVDA.BA","JPM.BA","V.BA","JNJ.BA","WMT.BA","PG.BA","MA.BA","HD.BA","DIS.BA","NFLX.BA","PYPL.BA","INTC.BA","AMD.BA","BA.BA","KO.BA","PEP.BA","NKE.BA","SBUX.BA","T.BA","VZ.BA","QCOM.BA","TXN.BA","COST.BA","ABBV.BA","MRK.BA","PFE.BA","BMY.BA","UNH.BA","CVX.BA","XOM.BA","COP.BA","SLB.BA","VALE.BA","RIO.BA","GOLD.BA","NEM.BA","BABA.BA","MELI.BA","GLOB.BA","DESP.BA","BIOX.BA","CAAP.BA","VIST.BA","LAC.BA","BRKB.BA","GS.BA","MS.BA","C.BA","WFC.BA","BAC.BA","AXP.BA","CAT.BA","DE.BA","MMM.BA","GE.BA","HON.BA","UPS.BA","FDX.BA","LMT.BA","RTX.BA","NOC.BA","SNOW.BA","CRM.BA","ORCL.BA","IBM.BA","SHOP.BA","SQ.BA","UBER.BA","ABNB.BA","COIN.BA","SPOT.BA","ZM.BA","DOCU.BA","NET.BA","DDOG.BA","MDB.BA","CRWD.BA","PANW.BA","PLTR.BA","ARM.BA","SMCI.BA","AVGO.BA","MU.BA","LRCX.BA","AMAT.BA","KLAC.BA","TSM.BA","ASML.BA","SAP.BA","TM.BA","HMC.BA","SONY.BA","LLY.BA","NVO.BA","ADBE.BA"];
+const ALL_TICKERS=[...TICKERS_AR,...TICKERS_CEDEAR];
+const MACRO_TICKERS={VIX:"^VIX",SP500:"^GSPC",DOW:"^DJI",MERVAL:"^MERV",DXY:"DX-Y.NYB",OIL:"CL=F",GOLD:"GC=F",US10Y:"^TNX"};
+const HOLIDAYS_AR=["2026-01-01","2026-02-16","2026-02-17","2026-03-24","2026-04-02","2026-04-03","2026-05-01","2026-05-25","2026-06-15","2026-06-20","2026-07-09","2026-08-17","2026-10-12","2026-11-23","2026-12-08","2026-12-25","2025-01-01","2025-02-24","2025-02-25","2025-03-24","2025-04-02","2025-04-17","2025-04-18","2025-05-01","2025-05-25","2025-06-16","2025-06-20","2025-07-09","2025-08-18","2025-10-12","2025-11-24","2025-12-08","2025-12-25"];
+const ARS=v=>v==null?"—":`$${Number(v).toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+const PCT=v=>v==null?"—":`${v>=0?"+":""}${v.toFixed(2)}%`;
+const NUM=v=>v==null?"—":Number(v).toLocaleString("es-AR");
+const TABS=[{id:"dash",icon:"⚡",label:"Dashboard"},{id:"scan",icon:"📡",label:"Escáner"},{id:"port",icon:"💼",label:"Cartera"},{id:"alert",icon:"🔔",label:"Alertas"},{id:"ops",icon:"📊",label:"Operaciones"},{id:"cfg",icon:"⚙️",label:"Config"}];
+const INIT_PORTFOLIO={capital:2122368,positions:[{ticker:"LAC.BA",qty:300,lots:[{qty:151,price:5945,date:"2025-03-01"},{qty:149,price:5605,date:"2025-03-15"}]}]};
+const INIT_ALERTS=[{id:"a1",ticker:"LAC.BA",type:"buy",price:5500,active:true},{id:"a2",ticker:"LAC.BA",type:"buy",price:5400,active:true},{id:"a3",ticker:"LAC.BA",type:"sell",price:7000,active:true},{id:"a4",ticker:"LAC.BA",type:"sell",price:8000,active:true},{id:"a5",ticker:"LAC.BA",type:"sell",price:10000,active:true}];
+const INIT_WATCHLIST=["LAC.BA","EDN.BA","ALUA.BA"];
+const INIT_SETTINGS={scanInterval:30,maxSignals:5,enableNotifications:true,scanTickers:"watchlist",riskPerTrade:5};
+
+// ═══════════════════════════════════════════════════════════
+// INDEXEDDB PERSISTENCE
+// ═══════════════════════════════════════════════════════════
+const DB={
+  _db:null,
+  async init(){if(DB._db)return;return new Promise((res,rej)=>{const r=indexedDB.open('byma-trader-v2',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>{DB._db=r.result;res()};r.onerror=()=>rej(r.error)})},
+  async get(k,def=null){try{await DB.init();return new Promise(r=>{const tx=DB._db.transaction('kv','readonly');const req=tx.objectStore('kv').get(k);req.onsuccess=()=>r(req.result??def);req.onerror=()=>r(def)})}catch{return def}},
+  async set(k,v){try{await DB.init();return new Promise((r,j)=>{const tx=DB._db.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);tx.oncomplete=()=>r();tx.onerror=()=>j(tx.error)})}catch{}},
+  async del(k){try{await DB.init();return new Promise(r=>{const tx=DB._db.transaction('kv','readwrite');tx.objectStore('kv').delete(k);tx.oncomplete=()=>r()})}catch{}}
+};
+function useP(key,init){
+  const[v,setV]=useState(init);
+  useEffect(()=>{let m=true;DB.get(key).then(s=>{if(m&&s!=null)setV(s)});return()=>{m=false}},[key]);
+  const upd=useCallback(fn=>{setV(p=>{const n=typeof fn==="function"?fn(p):fn;DB.set(key,n);return n})},[key]);
+  return[v,upd];
+}
+
+// ═══════════════════════════════════════════════════════════
+// YAHOO FINANCE VIA ALLORIGINS PROXY
+// ═══════════════════════════════════════════════════════════
+async function yf(ticker,range="1y"){
+  const url=`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?range=${range}&interval=1d&includePrePost=false`;
+  const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+  const res=await fetch(proxyUrl,{signal:AbortSignal.timeout(25000)});
+  if(!res.ok)throw new Error(`HTTP ${res.status}`);
+  const env=await res.json();
+  if(!env.contents)throw new Error("empty envelope");
+  const d=JSON.parse(env.contents);
+  if(!d?.chart?.result?.[0])throw new Error("no chart data");
+  const r=d.chart.result[0],ts=r.timestamp||[],q=r.indicators?.quote?.[0]||{},m=r.meta||{};
+  const candles=ts.map((t,i)=>({date:new Date(t*1000).toISOString().slice(0,10),ts:t,o:q.open?.[i],h:q.high?.[i],l:q.low?.[i],c:q.close?.[i],v:q.volume?.[i]})).filter(c=>c.c!=null&&c.v!=null);
+  if(!candles.length)throw new Error("no candles");
+  const last=candles[candles.length-1],prev=candles.length>1?candles[candles.length-2]:last;
+  const price=m.regularMarketPrice||last.c;
+  const quote={ticker,price,prevClose:prev.c,change:prev.c?((price-prev.c)/prev.c*100):0,volume:last.v,high:last.h,low:last.l,open:last.o,name:m.shortName||m.symbol||ticker,currency:m.currency||"ARS",ts:Date.now()};
+  return{quote,candles};
+}
+
+// ═══════════════════════════════════════════════════════════
+// TECHNICAL ANALYSIS (18 indicators)
+// ═══════════════════════════════════════════════════════════
+const TA={
+  sma(d,p){const r=[];for(let i=0;i<d.length;i++){if(i<p-1){r.push(null);continue}let s=0;for(let j=i-p+1;j<=i;j++)s+=d[j];r.push(s/p)}return r},
+  ema(d,p){const r=[],k=2/(p+1);let prev=null;for(let i=0;i<d.length;i++){if(i<p-1){r.push(null);continue}if(prev===null){let s=0;for(let j=i-p+1;j<=i;j++)s+=d[j];prev=s/p}else prev=d[i]*k+prev*(1-k);r.push(prev)}return r},
+  rsi(c,p=14){const r=new Array(c.length).fill(null);let g=0,l=0;for(let i=1;i<=p;i++){const d=c[i]-c[i-1];if(d>0)g+=d;else l-=d}g/=p;l/=p;r[p]=l===0?100:100-100/(1+g/l);for(let i=p+1;i<c.length;i++){const d=c[i]-c[i-1];g=(g*(p-1)+(d>0?d:0))/p;l=(l*(p-1)+(d<0?-d:0))/p;r[i]=l===0?100:100-100/(1+g/l)}return r},
+  macd(c,f=12,s=26,sg=9){const eF=TA.ema(c,f),eS=TA.ema(c,s),line=eF.map((v,i)=>v!=null&&eS[i]!=null?v-eS[i]:null),valid=line.filter(v=>v!=null),sigL=TA.ema(valid,sg);let si=0;const signal=line.map(v=>v==null?null:sigL[si++]??null),hist=line.map((v,i)=>v!=null&&signal[i]!=null?v-signal[i]:null);return{line,signal,histogram:hist}},
+  bollinger(c,p=20,m=2){const mid=TA.sma(c,p),u=[],l=[];for(let i=0;i<c.length;i++){if(mid[i]==null){u.push(null);l.push(null);continue}let sq=0;for(let j=i-p+1;j<=i;j++)sq+=(c[j]-mid[i])**2;const std=Math.sqrt(sq/p);u.push(mid[i]+m*std);l.push(mid[i]-m*std)}return{upper:u,middle:mid,lower:l}},
+  stochastic(cd,kP=14,dP=3){const kA=new Array(cd.length).fill(null);for(let i=kP-1;i<cd.length;i++){let hh=-Infinity,ll=Infinity;for(let j=i-kP+1;j<=i;j++){if(cd[j].h>hh)hh=cd[j].h;if(cd[j].l<ll)ll=cd[j].l}kA[i]=hh!==ll?((cd[i].c-ll)/(hh-ll))*100:50}const dA=TA.sma(kA.map(v=>v??0),dP).map((v,i)=>kA[i]!=null?v:null);return{k:kA,d:dA}},
+  atr(cd,p=14){const r=new Array(cd.length).fill(null),tr=[];for(let i=1;i<cd.length;i++)tr.push(Math.max(cd[i].h-cd[i].l,Math.abs(cd[i].h-cd[i-1].c),Math.abs(cd[i].l-cd[i-1].c)));if(tr.length<p)return r;let avg=0;for(let i=0;i<p;i++)avg+=tr[i];avg/=p;r[p]=avg;for(let i=p;i<tr.length;i++){avg=(avg*(p-1)+tr[i])/p;r[i+1]=avg}return r},
+  obv(cd){const r=[0];for(let i=1;i<cd.length;i++){if(cd[i].c>cd[i-1].c)r.push(r[i-1]+cd[i].v);else if(cd[i].c<cd[i-1].c)r.push(r[i-1]-cd[i].v);else r.push(r[i-1])}return r},
+  williamsR(cd,p=14){const r=new Array(cd.length).fill(null);for(let i=p-1;i<cd.length;i++){let hh=-Infinity,ll=Infinity;for(let j=i-p+1;j<=i;j++){if(cd[j].h>hh)hh=cd[j].h;if(cd[j].l<ll)ll=cd[j].l}r[i]=hh!==ll?((hh-cd[i].c)/(hh-ll))*-100:-50}return r},
+  cci(cd,p=20){const r=new Array(cd.length).fill(null),tp=cd.map(c=>(c.h+c.l+c.c)/3);for(let i=p-1;i<cd.length;i++){let s=0;for(let j=i-p+1;j<=i;j++)s+=tp[j];const avg=s/p;let md=0;for(let j=i-p+1;j<=i;j++)md+=Math.abs(tp[j]-avg);md/=p;r[i]=md?(tp[i]-avg)/(.015*md):0}return r},
+  mfi(cd,p=14){const r=new Array(cd.length).fill(null),tp=cd.map(c=>(c.h+c.l+c.c)/3),mf=tp.map((t,i)=>t*cd[i].v);for(let i=p;i<cd.length;i++){let pos=0,neg=0;for(let j=i-p+1;j<=i;j++){if(tp[j]>tp[j-1])pos+=mf[j];else neg+=mf[j]}r[i]=neg?100-100/(1+pos/neg):100}return r},
+  roc(c,p=12){return c.map((v,i)=>i<p?null:((v-c[i-p])/c[i-p])*100)},
+  trix(c,p=15){const e1=TA.ema(c,p),e2=TA.ema(e1.map(v=>v??0),p),e3=TA.ema(e2.map(v=>v??0),p);return e3.map((v,i)=>i<1||!e3[i-1]?null:((v-e3[i-1])/e3[i-1])*10000)},
+  ichimoku(cd,t=9,k=26){const mid=(arr,p,i)=>{let hh=-Infinity,ll=Infinity;for(let j=Math.max(0,i-p+1);j<=i;j++){if(arr[j].h>hh)hh=arr[j].h;if(arr[j].l<ll)ll=arr[j].l}return(hh+ll)/2};return{tenkan:cd.map((_,i)=>i>=t-1?mid(cd,t,i):null),kijun:cd.map((_,i)=>i>=k-1?mid(cd,k,i):null)}},
+  chaikin(cd,f=3,s=10){const adl=[0];for(let i=1;i<cd.length;i++){const hl=cd[i].h-cd[i].l;const mfm=hl?((cd[i].c-cd[i].l)-(cd[i].h-cd[i].c))/hl:0;adl.push(adl[i-1]+mfm*cd[i].v)}const ef=TA.ema(adl,f),es=TA.ema(adl,s);return ef.map((f,i)=>f!=null&&es[i]!=null?f-es[i]:null)}
+};
+
+function analyze(candles){
+  if(!candles||candles.length<60)return null;
+  const c=candles.map(x=>x.c),L=candles.length-1;
+  const rsi=TA.rsi(c),macd=TA.macd(c),bb=TA.bollinger(c),stoch=TA.stochastic(candles),atr=TA.atr(candles),obv=TA.obv(candles);
+  const willR=TA.williamsR(candles),cci=TA.cci(candles),mfi=TA.mfi(candles),roc=TA.roc(c),trix=TA.trix(c),ich=TA.ichimoku(candles),chk=TA.chaikin(candles);
+  const sma50=TA.sma(c,50),sma200=TA.sma(c,200),ema9=TA.ema(c,9),ema21=TA.ema(c,21);
+  return{price:c[L],rsi:rsi[L],macd:{line:macd.line[L],signal:macd.signal[L],hist:macd.histogram[L]},
+    bb:{upper:bb.upper[L],mid:bb.middle[L],lower:bb.lower[L],pctB:bb.upper[L]&&bb.lower[L]?(c[L]-bb.lower[L])/(bb.upper[L]-bb.lower[L]):null},
+    stoch:{k:stoch.k[L],d:stoch.d[L]},atr:atr[L],obv:obv[L],obvDelta:obv[L]-obv[Math.max(0,L-5)],willR:willR[L],cci:cci[L],mfi:mfi[L],roc:roc[L],trix:trix[L],
+    ichimoku:{tenkan:ich.tenkan[L],kijun:ich.kijun[L]},chaikin:chk[L],sma50:sma50[L],sma200:sma200[L],ema9:ema9[L],ema21:ema21[L],
+    trend:sma50[L]&&sma200[L]?(sma50[L]>sma200[L]?"alcista":"bajista"):"neutral",
+    chartData:candles.slice(-60).map(x=>({d:x.date.slice(5),p:x.c}))};
+}
+
+function score(ind){
+  if(!ind)return{signal:"sin datos",score:0,reasons:[],color:"#6b7280",confidence:0};
+  let s=0;const R=[];
+  if(ind.rsi<30){s+=2;R.push("RSI sobrevendido")}else if(ind.rsi<40){s+=1;R.push("RSI bajo")}else if(ind.rsi>70){s-=2;R.push("RSI sobrecomprado")}else if(ind.rsi>60){s-=1;R.push("RSI alto")}
+  if(ind.macd.hist>0&&ind.macd.line>ind.macd.signal){s+=1.5;R.push("MACD alcista")}else if(ind.macd.hist<0){s-=1.5;R.push("MACD bajista")}
+  if(ind.bb.pctB!=null){if(ind.bb.pctB<.05){s+=2;R.push("BB sobreventa")}else if(ind.bb.pctB<.2)s+=1;else if(ind.bb.pctB>.95){s-=2;R.push("BB sobrecompra")}else if(ind.bb.pctB>.8)s-=1}
+  if(ind.stoch.k<20&&ind.stoch.d<20){s+=1.5;R.push("Stoch sobrevendido")}else if(ind.stoch.k>80&&ind.stoch.d>80){s-=1.5;R.push("Stoch sobrecomprado")}
+  if(ind.stoch.k>ind.stoch.d&&ind.stoch.k<30){s+=1;R.push("Stoch cruce ↑")}
+  if(ind.obvDelta>0)s+=.5;else s-=.5;
+  if(ind.willR<-80){s+=1;R.push("W%R sobrevendido")}else if(ind.willR>-20){s-=1;R.push("W%R sobrecomprado")}
+  if(ind.cci<-100){s+=1;R.push("CCI sobrevendido")}else if(ind.cci>100){s-=1;R.push("CCI sobrecomprado")}
+  if(ind.mfi<20){s+=1;R.push("MFI sobrevendido")}else if(ind.mfi>80){s-=1;R.push("MFI sobrecomprado")}
+  if(ind.ema9>ind.ema21){s+=1;R.push("EMA 9>21")}else{s-=1;R.push("EMA 9<21")}
+  if(ind.sma200&&ind.price>ind.sma200)s+=.5;else if(ind.sma200)s-=.5;
+  if(ind.ichimoku.tenkan>ind.ichimoku.kijun)s+=.5;else s-=.5;
+  if(ind.trix>0)s+=.5;else if(ind.trix<0)s-=.5;
+  if(ind.chaikin>0)s+=.5;else if(ind.chaikin<0)s-=.5;
+  const n=Math.max(-10,Math.min(10,s));
+  let sig,col;
+  if(n>=5){sig="COMPRA FUERTE";col="#10b981"}else if(n>=2){sig="COMPRA";col="#34d399"}else if(n>-2){sig="HOLD";col="#f59e0b"}else if(n>-5){sig="VENTA";col="#f87171"}else{sig="VENTA FUERTE";col="#ef4444"}
+  return{signal:sig,score:n,color:col,reasons:R,confidence:Math.min(100,Math.abs(n)*10)};
+}
+
+function mktStatus(){
+  const now=new Date(),ar=new Date(now.toLocaleString("en-US",{timeZone:"America/Argentina/Buenos_Aires"})),day=ar.getDay(),ds=ar.toISOString().slice(0,10);
+  if(day===0||day===6)return{open:false,text:"Cerrado",next:"Lunes 10:30"};
+  if(HOLIDAYS_AR.includes(ds))return{open:false,text:"Feriado",next:"Próx. hábil 10:30"};
+  const mins=ar.getHours()*60+ar.getMinutes();
+  if(mins<630)return{open:false,text:"Pre-mercado",next:"Abre 10:30"};
+  if(mins>=1020)return{open:false,text:"Cerrado",next:"Mañana 10:30"};
+  const rem=1020-mins;return{open:true,text:"ABIERTO",next:`Cierra en ${Math.floor(rem/60)}h ${rem%60}m`};
+}
+function avgP(lots){const c=lots.reduce((s,l)=>s+l.qty*l.price,0),q=lots.reduce((s,l)=>s+l.qty,0);return q?c/q:0}
+
+// ═══════════════════════════════════════════════════════════
+// APP
+// ═══════════════════════════════════════════════════════════
+function App(){
+  const[tab,setTab]=useState("dash");
+  const[portfolio,setPf]=useP("portfolio",INIT_PORTFOLIO);
+  const[alerts,setAl]=useP("alerts",INIT_ALERTS);
+  const[watchlist,setWl]=useP("watchlist",INIT_WATCHLIST);
+  const[ops,setOps]=useP("ops",[]);
+  const[settings,setCfg]=useP("settings",INIT_SETTINGS);
+  const[signals,setSigs]=useState([]);
+  const[quotes,setQ]=useState({});
+  const[macro,setMacro]=useState({});
+  const[scanning,setScanning]=useState(false);
+  const[lastScan,setLast]=useState(null);
+  const[scanProg,setProg]=useState({cur:0,tot:0,t:""});
+  const[online,setOnline]=useState(navigator.onLine);
+  const busy=useRef(false);
+  const timer=useRef(null);
+
+  useEffect(()=>{const on=()=>setOnline(true),off=()=>setOnline(false);window.addEventListener("online",on);window.addEventListener("offline",off);return()=>{window.removeEventListener("online",on);window.removeEventListener("offline",off)}},[]);
+  useEffect(()=>{DB.get("signals-cache",[]).then(c=>{if(c?.length)setSigs(c)});DB.get("macro-cache",{}).then(c=>{if(c&&Object.keys(c).length)setMacro(c)});DB.get("quotes-cache",{}).then(c=>{if(c&&Object.keys(c).length)setQ(c)})},[]);
+  useEffect(()=>{if(Object.keys(quotes).length)DB.set("quotes-cache",quotes)},[quotes]);
+  useEffect(()=>{if("Notification"in window&&Notification.permission==="default")Notification.requestPermission()},[]);
+
+  const doScan=useCallback(async()=>{
+    if(busy.current||!online)return;busy.current=true;setScanning(true);
+    const tickers=settings.scanTickers==="all"?ALL_TICKERS:[...new Set([...portfolio.positions.map(p=>p.ticker),...watchlist,...alerts.filter(a=>a.active).map(a=>a.ticker)])];
+    const results=[];setProg({cur:0,tot:tickers.length,t:""});
+    for(let i=0;i<tickers.length;i++){
+      const t=tickers[i];setProg({cur:i+1,tot:tickers.length,t});
+      try{
+        const{quote,candles}=await yf(t);
+        if(quote){
+          setQ(prev=>({...prev,[t]:quote}));
+          alerts.filter(a=>a.active&&a.ticker===t).forEach(a=>{
+            const hit=a.type==="buy"?quote.price<=a.price:quote.price>=a.price;
+            if(hit&&"Notification"in window&&Notification.permission==="granted")new Notification(`🔔 ${a.type.toUpperCase()} ${t.replace(".BA","")}`,{body:`${ARS(quote.price)} — Alerta: ${ARS(a.price)}`});
+          });
+        }
+        if(candles){const ind=analyze(candles);const sig=score(ind);results.push({ticker:t,...sig,indicators:ind,quote,ts:Date.now()})}
+        await new Promise(r=>setTimeout(r,1200));
+      }catch(e){console.warn(t,e.message)}
+    }
+    // Macro
+    for(const[key,ticker]of Object.entries(MACRO_TICKERS)){
+      try{const{quote}=await yf(ticker,"5d");if(quote)setMacro(prev=>({...prev,[key]:quote}));await new Promise(r=>setTimeout(r,800))}catch{}
+    }
+    results.sort((a,b)=>b.score-a.score);setSigs(results);setLast(new Date().toLocaleTimeString("es-AR"));
+    setScanning(false);busy.current=false;
+    DB.set("signals-cache",results);DB.set("macro-cache",macro);
+  },[online,portfolio,watchlist,alerts,settings,macro]);
+
+  // Auto-scan
+  useEffect(()=>{if(timer.current)clearInterval(timer.current);timer.current=setInterval(()=>{const st=mktStatus();if(online&&st.open)doScan()},settings.scanInterval*60000);return()=>clearInterval(timer.current)},[settings.scanInterval,doScan,online]);
+
+  const ms=useMemo(()=>mktStatus(),[tab,scanning]);
+  const pVal=useMemo(()=>{let t=portfolio.capital;portfolio.positions.forEach(p=>{const q=quotes[p.ticker];if(q?.price)t+=q.price*p.qty});return t},[portfolio,quotes]);
+  const pPL=useMemo(()=>{let pl=0;portfolio.positions.forEach(p=>{const q=quotes[p.ticker];if(q?.price)pl+=(q.price-avgP(p.lots))*p.qty});return pl},[portfolio,quotes]);
+  const allQ=useMemo(()=>portfolio.positions.every(p=>quotes[p.ticker]?.price),[portfolio,quotes]);
+
+  return(
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",background:"linear-gradient(180deg,#080c14,#0d1220)",color:"#e2e8f0",fontFamily:"'Space Grotesk',sans-serif"}}>
+      <header style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",borderBottom:"1px solid rgba(51,65,85,.4)"}}>
+        <div>
+          <div style={{fontSize:14,fontWeight:600}}>⚡ BYMA Trader</div>
+          <div style={{fontSize:10,color:ms.open?"#10b981":"#94a3b8"}}>{ms.open&&<span className="p" style={{display:"inline-block",width:6,height:6,borderRadius:3,background:"#10b981",marginRight:4}}/>}{ms.text} • {ms.next}</div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:12}}>{online?"📶":"📵"}</span>
+          <button onClick={doScan} disabled={scanning||!online} className="b bp" style={{fontSize:11,opacity:scanning||!online?.4:1}}>
+            {scanning?`${scanProg.cur}/${scanProg.tot}`:"↻ Escanear"}
+          </button>
+        </div>
+      </header>
+
+      <main style={{flex:1,overflowY:"auto",padding:12,paddingBottom:80}}>
+        {tab==="dash"&&<Dash {...{portfolio,quotes,signals,macro,ms,pVal,pPL,allQ,lastScan,scanning,scanProg,setTab}}/>}
+        {tab==="scan"&&<Scan {...{signals,scanning}}/>}
+        {tab==="port"&&<Port {...{portfolio,setPf,quotes,setOps}}/>}
+        {tab==="alert"&&<Alert {...{alerts,setAl,quotes}}/>}
+        {tab==="ops"&&<Ops {...{ops,setOps}}/>}
+        {tab==="cfg"&&<Cfg {...{settings,setCfg,watchlist,setWl}}/>}
+      </main>
+
+      <nav style={{position:"fixed",bottom:0,left:0,right:0,display:"flex",justifyContent:"space-around",padding:4,background:"rgba(8,12,20,.95)",borderTop:"1px solid rgba(51,65,85,.4)",backdropFilter:"blur(12px)"}}>
+        {TABS.map(t=>(
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"6px 10px",borderRadius:8,fontSize:10,border:"none",cursor:"pointer",background:tab===t.id?"rgba(59,130,246,.15)":"transparent",color:tab===t.id?"#60a5fa":"#6b7280"}}>
+            <span style={{fontSize:16}}>{t.icon}</span>{t.label}
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+// ═══ DASHBOARD ═══
+function Dash({portfolio,quotes,signals,macro,ms,pVal,pPL,allQ,lastScan,scanning,scanProg,setTab}){
+  return(<div className="fi" style={{display:"flex",flexDirection:"column",gap:12}}>
+    <div className="c" style={{padding:16}}>
+      <div style={{fontSize:11,color:"#94a3b8",marginBottom:4}}>Valor Total Cartera</div>
+      <div className="m" style={{fontSize:24,fontWeight:700}}>{ARS(pVal)}</div>
+      {!allQ&&<div style={{fontSize:10,color:"#f59e0b",marginTop:2}}>⚠ Posiciones sin cotizar — escaneá para actualizar</div>}
+      <div className="m" style={{fontSize:13,color:pPL>=0?"#10b981":"#ef4444"}}>{pPL>=0?"▲":"▼"} {ARS(Math.abs(pPL))} ({PCT(pVal>0?(pPL/(pVal-pPL))*100:0)})</div>
+      <div style={{display:"flex",gap:16,marginTop:12,fontSize:11}}>
+        <div><span style={{color:"#6b7280"}}>Capital </span><span className="m" style={{color:"#cbd5e1"}}>{ARS(portfolio.capital)}</span></div>
+        <div><span style={{color:"#6b7280"}}>Posiciones </span><span className="m">{portfolio.positions.length}</span></div>
+      </div>
+    </div>
+    {portfolio.positions.map(pos=>{const q=quotes[pos.ticker],avg=avgP(pos.lots),hasQ=!!q?.price,cur=q?.price,pl=hasQ?(cur-avg)*pos.qty:null,pct=hasQ&&avg?((cur-avg)/avg)*100:null;return(
+      <div key={pos.ticker} className={`c ${pl!=null?(pl>=0?"gg":"gr"):""}`} style={{padding:12}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div><span style={{fontWeight:600,fontSize:14}}>{pos.ticker.replace(".BA","")}</span><span style={{fontSize:11,color:"#6b7280",marginLeft:8}}>{pos.qty} acc</span></div>
+          <div style={{textAlign:"right"}}><div className="m" style={{fontSize:13}}>{hasQ?ARS(cur):<span style={{color:"#f59e0b",fontSize:11}}>sin cotizar</span>}</div>{pl!=null&&<div className="m" style={{fontSize:11,color:pl>=0?"#10b981":"#ef4444"}}>{pl>=0?"+":""}{ARS(pl)} ({PCT(pct)})</div>}</div>
+        </div>
+        <div className="m" style={{fontSize:9,color:"#6b7280",marginTop:4}}>PM: {ARS(avg)} | Inv: {ARS(avg*pos.qty)}{hasQ&&<> | Val: {ARS(cur*pos.qty)}</>}</div>
+      </div>
+    )})}
+    {Object.keys(macro).length>0&&(<div className="c" style={{padding:12}}>
+      <div style={{fontSize:11,color:"#94a3b8",marginBottom:8}}>Indicadores Macro</div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
+        {Object.entries(macro).map(([k,q])=>(<div key={k} className="ci" style={{padding:6,textAlign:"center"}}>
+          <div style={{fontSize:9,color:"#6b7280"}}>{k}</div>
+          <div className="m" style={{fontSize:11}}>{q?.price?.toLocaleString("es-AR",{maximumFractionDigits:2})??"—"}</div>
+          <div className="m" style={{fontSize:9,color:(q?.change||0)>=0?"#10b981":"#ef4444"}}>{PCT(q?.change)}</div>
+        </div>))}
+      </div>
+    </div>)}
+    {signals.slice(0,5).length>0&&(<div className="c" style={{padding:12}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+        <span style={{fontSize:11,color:"#94a3b8"}}>Mejores Señales</span>
+        <button onClick={()=>setTab("scan")} style={{fontSize:10,color:"#3b82f6",background:"none",border:"none",cursor:"pointer"}}>Ver todas ›</button>
+      </div>
+      {signals.slice(0,5).map(s=><Sig key={s.ticker} s={s}/>)}
+    </div>)}
+    {scanning&&<div className="c" style={{padding:12}}><div style={{fontSize:11,color:"#94a3b8"}}>↻ {scanProg.t?.replace(".BA","")} ({scanProg.cur}/{scanProg.tot})</div><div style={{width:"100%",height:4,background:"#1e293b",borderRadius:2,marginTop:8}}><div style={{height:"100%",background:"#3b82f6",borderRadius:2,transition:"width .3s",width:`${scanProg.tot?(scanProg.cur/scanProg.tot)*100:0}%`}}/></div></div>}
+    {lastScan&&!scanning&&<div className="m" style={{fontSize:9,textAlign:"center",color:"#4b5563"}}>Último escaneo: {lastScan}</div>}
+  </div>);
+}
+
+function Sig({s}){
+  const[ex,setEx]=useState(false);
+  return(<div style={{marginBottom:6}}>
+    <button onClick={()=>setEx(!ex)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 4px",background:"none",border:"none",color:"#e2e8f0",cursor:"pointer",borderRadius:8}}>
+      <div style={{display:"flex",alignItems:"center",gap:8}}>
+        <span style={{fontWeight:500,fontSize:13}}>{s.ticker.replace(".BA","")}</span>
+        <span className="sb" style={{background:s.color+"20",color:s.color}}>{s.signal}</span>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:8}}>
+        <span className="m" style={{fontSize:11}}>{ARS(s.quote?.price)}</span>
+        <span className="m" style={{fontSize:10,color:(s.quote?.change||0)>=0?"#10b981":"#ef4444"}}>{PCT(s.quote?.change)}</span>
+        <span style={{fontSize:10}}>{ex?"▲":"▼"}</span>
+      </div>
+    </button>
+    {ex&&s.indicators&&(<div className="fi" style={{padding:"0 8px 8px"}}>
+      <div className="ci m" style={{padding:8,fontSize:10}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:4}}>
+          <div>RSI: <span style={{color:s.indicators.rsi<30?"#10b981":s.indicators.rsi>70?"#ef4444":"#cbd5e1"}}>{s.indicators.rsi?.toFixed(1)}</span></div>
+          <div>MACD: <span style={{color:s.indicators.macd.hist>0?"#10b981":"#ef4444"}}>{s.indicators.macd.hist?.toFixed(2)}</span></div>
+          <div>Stoch: {s.indicators.stoch.k?.toFixed(1)}</div>
+          <div>BB%: {((s.indicators.bb.pctB||0)*100).toFixed(0)}%</div>
+          <div>ATR: {s.indicators.atr?.toFixed(0)}</div>
+          <div>MFI: {s.indicators.mfi?.toFixed(1)}</div>
+          <div>CCI: {s.indicators.cci?.toFixed(0)}</div>
+          <div>W%R: {s.indicators.willR?.toFixed(1)}</div>
+          <div>ROC: {s.indicators.roc?.toFixed(2)}%</div>
+          <div>Trend: <span style={{color:s.indicators.trend==="alcista"?"#10b981":"#ef4444"}}>{s.indicators.trend}</span></div>
+          <div>Score: {s.score.toFixed(1)}</div>
+          <div>Conf: {s.confidence}%</div>
+        </div>
+        <div style={{borderTop:"1px solid rgba(51,65,85,.3)",paddingTop:4,marginTop:4,color:"#6b7280"}}>{s.reasons.join(" • ")}</div>
+      </div>
+      {s.indicators.chartData&&<div style={{height:80,marginTop:8}}><ResponsiveContainer width="100%" height="100%"><AreaChart data={s.indicators.chartData} margin={{top:0,right:0,left:0,bottom:0}}><defs><linearGradient id={`g${s.ticker}`} x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={s.color} stopOpacity={.3}/><stop offset="95%" stopColor={s.color} stopOpacity={0}/></linearGradient></defs><Area type="monotone" dataKey="p" stroke={s.color} fill={`url(#g${s.ticker})`} strokeWidth={1.5} dot={false}/><XAxis dataKey="d" hide/><YAxis hide domain={["auto","auto"]}/><Tooltip contentStyle={{background:"#0f172a",border:"1px solid #334155",borderRadius:8,fontSize:11,fontFamily:"monospace"}} formatter={v=>[ARS(v),"Precio"]}/></AreaChart></ResponsiveContainer></div>}
+    </div>)}
+  </div>);
+}
+
+// ═══ SCANNER ═══
+function Scan({signals,scanning}){
+  const[f,setF]=useState("all");const[q,setQ]=useState("");
+  const list=useMemo(()=>{let l=signals;if(f==="buy")l=l.filter(s=>s.score>=2);else if(f==="sell")l=l.filter(s=>s.score<=-2);else if(f==="strong")l=l.filter(s=>Math.abs(s.score)>=5);if(q){const u=q.toUpperCase();l=l.filter(s=>s.ticker.toUpperCase().includes(u))}return l},[signals,f,q]);
+  return(<div className="fi" style={{display:"flex",flexDirection:"column",gap:12}}>
+    <input value={q} onChange={e=>setQ(e.target.value)} placeholder="🔍 Buscar ticker..." style={{fontSize:12}}/>
+    <div style={{display:"flex",gap:4,overflowX:"auto"}}>{[["all","Todas"],["buy","🟢 Compra"],["sell","🔴 Venta"],["strong","⚡ Fuertes"]].map(([v,l])=>(<button key={v} onClick={()=>setF(v)} className={`b ${f===v?"bp":"bx"}`} style={{fontSize:11,whiteSpace:"nowrap"}}>{l}</button>))}</div>
+    {list.length===0?<div style={{textAlign:"center",color:"#6b7280",padding:32,fontSize:13}}>{signals.length===0?"Presioná Escanear":"Sin resultados"}</div>
+    :<div><div className="m" style={{fontSize:9,color:"#6b7280",padding:4}}>{list.length} resultados</div>{list.map(s=><Sig key={s.ticker} s={s}/>)}</div>}
+  </div>);
+}
+
+// ═══ PORTFOLIO ═══
+function Port({portfolio,setPf,quotes,setOps}){
+  const[showBuy,setBuy]=useState(false);const[showSell,setSell]=useState(null);
+  const[fm,setFm]=useState({ticker:"",qty:"",price:"",date:new Date().toISOString().slice(0,10)});
+  const[editCap,setEC]=useState(false);const[capIn,setCI]=useState("");
+  const handleBuy=()=>{const tk=fm.ticker.toUpperCase().endsWith(".BA")?fm.ticker.toUpperCase():fm.ticker.toUpperCase()+".BA";const qty=parseInt(fm.qty),pr=parseFloat(fm.price);if(!tk||!qty||!pr)return;
+    setPf(p=>{const ex=p.positions.find(x=>x.ticker===tk);return{...p,capital:p.capital-qty*pr,positions:ex?p.positions.map(x=>x.ticker===tk?{...x,qty:x.qty+qty,lots:[...x.lots,{qty,price:pr,date:fm.date}]}:x):[...p.positions,{ticker:tk,qty,lots:[{qty,price:pr,date:fm.date}]}]}});
+    setOps(p=>[...p,{id:Date.now()+"",type:"buy",ticker:tk,qty,price:pr,total:qty*pr,date:fm.date,ts:Date.now()}]);setFm({ticker:"",qty:"",price:"",date:new Date().toISOString().slice(0,10)});setBuy(false)};
+  const handleSell=(tk)=>{const qty=parseInt(fm.qty),pr=parseFloat(fm.price);if(!qty||!pr)return;const pos=portfolio.positions.find(p=>p.ticker===tk);if(!pos||qty>pos.qty)return;
+    const avg=avgP(pos.lots);setPf(p=>({...p,capital:p.capital+qty*pr,positions:qty===pos.qty?p.positions.filter(x=>x.ticker!==tk):p.positions.map(x=>x.ticker===tk?{...x,qty:x.qty-qty,lots:((lots,sq)=>{let r=sq;return lots.map(l=>{if(r<=0)return l;const t=Math.min(r,l.qty);r-=t;return{...l,qty:l.qty-t}}).filter(l=>l.qty>0)})(x.lots,qty)}:x)}));
+    setOps(p=>[...p,{id:Date.now()+"",type:"sell",ticker:tk,qty,price:pr,total:qty*pr,date:fm.date,ts:Date.now(),pl:(pr-avg)*qty}]);setFm({ticker:"",qty:"",price:"",date:new Date().toISOString().slice(0,10)});setSell(null)};
+  return(<div className="fi" style={{display:"flex",flexDirection:"column",gap:12}}>
+    <div className="c" style={{padding:12}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:11,color:"#94a3b8"}}>Capital Disponible</span><button onClick={()=>{setEC(!editCap);setCI(portfolio.capital+"")}} style={{background:"none",border:"none",color:"#6b7280",cursor:"pointer"}}>✏</button></div>
+      {editCap?<div style={{display:"flex",gap:8,marginTop:4}}><input value={capIn} onChange={e=>setCI(e.target.value)} type="number" className="m" style={{flex:1,fontSize:18}}/><button onClick={()=>{setPf(p=>({...p,capital:parseFloat(capIn)||0}));setEC(false)}} className="b bp">✓</button></div>
+      :<div className="m" style={{fontSize:20,fontWeight:700,marginTop:4}}>{ARS(portfolio.capital)}</div>}
+    </div>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:11,color:"#94a3b8"}}>Posiciones ({portfolio.positions.length})</span><button onClick={()=>setBuy(!showBuy)} className="b bg" style={{fontSize:11}}>+ Comprar</button></div>
+    {showBuy&&<div className="c fi" style={{padding:12,display:"flex",flexDirection:"column",gap:8}}>
+      <div style={{fontSize:12,fontWeight:500}}>Registrar Compra</div>
+      <input placeholder="Ticker (ej: GGAL)" value={fm.ticker} onChange={e=>setFm(f=>({...f,ticker:e.target.value}))} style={{fontSize:12}}/>
+      <div style={{display:"flex",gap:8}}><input placeholder="Cantidad" type="number" value={fm.qty} onChange={e=>setFm(f=>({...f,qty:e.target.value}))} style={{flex:1,fontSize:12}}/><input placeholder="Precio" type="number" value={fm.price} onChange={e=>setFm(f=>({...f,price:e.target.value}))} style={{flex:1,fontSize:12}}/></div>
+      <input type="date" value={fm.date} onChange={e=>setFm(f=>({...f,date:e.target.value}))} style={{fontSize:12}}/>
+      {fm.qty&&fm.price&&<div className="m" style={{fontSize:10,color:"#6b7280"}}>Total: {ARS(parseInt(fm.qty||0)*parseFloat(fm.price||0))}{parseInt(fm.qty||0)*parseFloat(fm.price||0)>portfolio.capital&&<span style={{color:"#ef4444",marginLeft:8}}>⚠ Sin capital</span>}</div>}
+      <div style={{display:"flex",gap:8}}><button onClick={handleBuy} className="b bg" style={{flex:1}}>Confirmar</button><button onClick={()=>setBuy(false)} className="b bx">Cancelar</button></div>
+    </div>}
+    {portfolio.positions.map(pos=>{const q=quotes[pos.ticker],avg=avgP(pos.lots),hasQ=!!q?.price,cur=q?.price,pl=hasQ?(cur-avg)*pos.qty:null,pct=hasQ&&avg?((cur-avg)/avg)*100:null;return(
+      <div key={pos.ticker} className={`c ${pl!=null?(pl>=0?"gg":"gr"):""}`} style={{padding:12}}>
+        <div style={{display:"flex",justifyContent:"space-between"}}><div><div style={{fontWeight:600}}>{pos.ticker.replace(".BA","")}</div><div className="m" style={{fontSize:11,color:"#6b7280"}}>{pos.qty} acciones</div></div>
+          <div style={{textAlign:"right"}}><div className="m" style={{fontWeight:500}}>{hasQ?ARS(cur):<span style={{color:"#f59e0b",fontSize:11}}>sin cotizar</span>}</div>{pl!=null&&<div className="m" style={{fontSize:11,color:pl>=0?"#10b981":"#ef4444"}}>{pl>=0?"+":""}{ARS(pl)}</div>}</div></div>
+        <div className="m" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginTop:8,fontSize:9,color:"#6b7280"}}><div>PM: {ARS(avg)}</div>{pct!=null&&<div>P&L%: <span style={{color:pct>=0?"#10b981":"#ef4444"}}>{PCT(pct)}</span></div>}<div>Inv: {ARS(avg*pos.qty)}</div>{hasQ&&<div>Val: {ARS(cur*pos.qty)}</div>}</div>
+        <div style={{marginTop:8,paddingTop:8,borderTop:"1px solid rgba(51,65,85,.3)"}}><div style={{fontSize:9,color:"#6b7280",marginBottom:2}}>Lotes:</div>{pos.lots.map((l,i)=><div key={i} className="m" style={{fontSize:9,color:"#6b7280"}}>{l.qty} × {ARS(l.price)} = {ARS(l.qty*l.price)} ({l.date})</div>)}</div>
+        <button onClick={()=>{setSell(showSell===pos.ticker?null:pos.ticker);setFm(f=>({...f,ticker:pos.ticker,qty:pos.qty+"",price:""}))}} className="b br" style={{width:"100%",marginTop:8,fontSize:11}}>Vender</button>
+        {showSell===pos.ticker&&<div className="ci fi" style={{marginTop:8,padding:8,display:"flex",flexDirection:"column",gap:8}}>
+          <div style={{fontSize:12}}>Venta {pos.ticker.replace(".BA","")}</div>
+          <div style={{display:"flex",gap:8}}><input placeholder="Cant" type="number" value={fm.qty} onChange={e=>setFm(f=>({...f,qty:e.target.value}))} style={{flex:1,fontSize:12}}/><input placeholder="Precio" type="number" value={fm.price} onChange={e=>setFm(f=>({...f,price:e.target.value}))} style={{flex:1,fontSize:12}}/></div>
+          {fm.qty&&fm.price&&<div className="m" style={{fontSize:9,color:"#6b7280"}}>Revenue: {ARS(parseInt(fm.qty)*parseFloat(fm.price))} | P&L: <span style={{color:(parseFloat(fm.price)-avg)>=0?"#10b981":"#ef4444"}}>{ARS((parseFloat(fm.price)-avg)*parseInt(fm.qty))}</span></div>}
+          <div style={{display:"flex",gap:8}}><button onClick={()=>handleSell(pos.ticker)} className="b br" style={{flex:1}}>Confirmar</button><button onClick={()=>setSell(null)} className="b bx">Cancelar</button></div>
+        </div>}
+      </div>
+    )})}
+    {portfolio.positions.length===0&&<div style={{textAlign:"center",color:"#6b7280",padding:24,fontSize:13}}>Sin posiciones</div>}
+  </div>);
+}
+
+// ═══ ALERTS ═══
+function Alert({alerts,setAl,quotes}){
+  const[show,setShow]=useState(false);const[fm,setFm]=useState({ticker:"",type:"buy",price:""});
+  const add=()=>{const tk=fm.ticker.toUpperCase().endsWith(".BA")?fm.ticker.toUpperCase():fm.ticker.toUpperCase()+".BA";const pr=parseFloat(fm.price);if(!tk||!pr)return;setAl(p=>[...p,{id:Date.now()+"",ticker:tk,type:fm.type,price:pr,active:true}]);setFm({ticker:"",type:"buy",price:""});setShow(false)};
+  return(<div className="fi" style={{display:"flex",flexDirection:"column",gap:12}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:11,color:"#94a3b8"}}>Alertas ({alerts.length})</span><button onClick={()=>setShow(!show)} className="b bp" style={{fontSize:11}}>+ Nueva</button></div>
+    {show&&<div className="c fi" style={{padding:12,display:"flex",flexDirection:"column",gap:8}}>
+      <input placeholder="Ticker" value={fm.ticker} onChange={e=>setFm(f=>({...f,ticker:e.target.value}))} style={{fontSize:12}}/>
+      <div style={{display:"flex",gap:8}}><select value={fm.type} onChange={e=>setFm(f=>({...f,type:e.target.value}))} style={{flex:1,fontSize:12}}><option value="buy">Compra (baja a)</option><option value="sell">Venta (sube a)</option></select><input placeholder="Precio" type="number" value={fm.price} onChange={e=>setFm(f=>({...f,price:e.target.value}))} style={{flex:1,fontSize:12}}/></div>
+      <div style={{display:"flex",gap:8}}><button onClick={add} className="b bp" style={{flex:1}}>Agregar</button><button onClick={()=>setShow(false)} className="b bx">Cancelar</button></div>
+    </div>}
+    {alerts.map(a=>{const q=quotes[a.ticker],cur=q?.price,dist=cur?((a.price-cur)/cur*100):null,hit=cur&&(a.type==="buy"?cur<=a.price:cur>=a.price);return(
+      <div key={a.id} className={`c ${hit?"gg":""}`} style={{padding:12,display:"flex",alignItems:"center",gap:12,opacity:a.active?1:.4}}>
+        <div style={{width:32,height:32,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,background:a.type==="buy"?"rgba(16,185,129,.2)":"rgba(239,68,68,.2)"}}>{a.type==="buy"?"↘":"↗"}</div>
+        <div style={{flex:1}}>
+          <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontWeight:500,fontSize:13}}>{a.ticker.replace(".BA","")}</span><span style={{fontSize:10,padding:"2px 6px",borderRadius:4,background:a.type==="buy"?"rgba(16,185,129,.2)":"rgba(239,68,68,.2)",color:a.type==="buy"?"#10b981":"#ef4444"}}>{a.type==="buy"?"COMPRA":"VENTA"}</span>{hit&&<span style={{fontSize:10,padding:"2px 6px",borderRadius:4,background:"rgba(245,158,11,.2)",color:"#f59e0b"}}>¡ACTIVA!</span>}</div>
+          <div className="m" style={{fontSize:10,color:"#6b7280"}}>Alerta: {ARS(a.price)}{cur&&<> | Actual: {ARS(cur)} | {dist>0?"+":""}{dist?.toFixed(1)}%</>}</div>
+        </div>
+        <div style={{display:"flex",gap:4}}>
+          <button onClick={()=>setAl(p=>p.map(x=>x.id===a.id?{...x,active:!x.active}:x))} style={{padding:6,background:"none",border:"none",cursor:"pointer",color:a.active?"#3b82f6":"#4b5563",fontSize:14}}>👁</button>
+          <button onClick={()=>setAl(p=>p.filter(x=>x.id!==a.id))} style={{padding:6,background:"none",border:"none",cursor:"pointer",color:"#ef4444",fontSize:14}}>🗑</button>
+        </div>
+      </div>
+    )})}
+    {!alerts.length&&<div style={{textAlign:"center",color:"#6b7280",padding:24}}>Sin alertas</div>}
+  </div>);
+}
+
+// ═══ OPERATIONS ═══
+function Ops({ops,setOps}){
+  const sorted=useMemo(()=>[...ops].sort((a,b)=>b.ts-a.ts),[ops]);
+  const tPL=sorted.filter(o=>o.type==="sell"&&o.pl!=null).reduce((s,o)=>s+o.pl,0);
+  const tB=sorted.filter(o=>o.type==="buy").reduce((s,o)=>s+o.total,0);
+  const tS=sorted.filter(o=>o.type==="sell").reduce((s,o)=>s+o.total,0);
+  return(<div className="fi" style={{display:"flex",flexDirection:"column",gap:12}}>
+    <div className="c" style={{padding:12,display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,textAlign:"center"}}>
+      <div><div style={{fontSize:9,color:"#6b7280"}}>Comprado</div><div className="m" style={{fontSize:11,color:"#10b981"}}>{ARS(tB)}</div></div>
+      <div><div style={{fontSize:9,color:"#6b7280"}}>Vendido</div><div className="m" style={{fontSize:11,color:"#ef4444"}}>{ARS(tS)}</div></div>
+      <div><div style={{fontSize:9,color:"#6b7280"}}>P&L</div><div className="m" style={{fontSize:11,color:tPL>=0?"#10b981":"#ef4444"}}>{ARS(tPL)}</div></div>
+    </div>
+    {sorted.map(op=>(
+      <div key={op.id} className="c" style={{padding:12,display:"flex",alignItems:"center",gap:12}}>
+        <div style={{width:32,height:32,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,background:op.type==="buy"?"rgba(16,185,129,.2)":"rgba(239,68,68,.2)"}}>{op.type==="buy"?"↘":"↗"}</div>
+        <div style={{flex:1}}><div><span style={{fontWeight:500,fontSize:13}}>{op.ticker.replace(".BA","")}</span> <span style={{fontSize:10,color:op.type==="buy"?"#10b981":"#ef4444"}}>{op.type==="buy"?"COMPRA":"VENTA"}</span></div>
+          <div className="m" style={{fontSize:10,color:"#6b7280"}}>{op.qty} × {ARS(op.price)} = {ARS(op.total)}{op.pl!=null&&<span style={{color:op.pl>=0?"#10b981":"#ef4444"}}> | P&L: {ARS(op.pl)}</span>}</div></div>
+        <div style={{fontSize:10,color:"#6b7280"}}>{op.date}</div>
+      </div>
+    ))}
+    {!sorted.length&&<div style={{textAlign:"center",color:"#6b7280",padding:24}}>Sin operaciones</div>}
+    {sorted.length>0&&<button onClick={()=>{if(confirm("¿Borrar historial?"))setOps([])}} className="b bx" style={{width:"100%",fontSize:11,color:"#ef4444"}}>Limpiar</button>}
+  </div>);
+}
+
+// ═══ CONFIG ═══
+function Cfg({settings,setCfg,watchlist,setWl}){
+  const[nt,setNt]=useState("");
+  const addW=()=>{const t=nt.toUpperCase().endsWith(".BA")?nt.toUpperCase():nt.toUpperCase()+".BA";if(t.length>3&&!watchlist.includes(t)){setWl(p=>[...p,t]);setNt("")}};
+  return(<div className="fi" style={{display:"flex",flexDirection:"column",gap:12}}>
+    <div className="c" style={{padding:12,display:"flex",flexDirection:"column",gap:12}}>
+      <div style={{fontSize:12,fontWeight:500}}>Escaneo</div>
+      {[["Intervalo (min)","scanInterval",[15,30,60]],["Tickers","scanTickers",["watchlist","all"]],["Máx señales","maxSignals",[3,5,10]],["Riesgo %","riskPerTrade",[1,2,3,5,10]]].map(([lbl,key,opts])=>(
+        <div key={key} style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:11,color:"#94a3b8"}}>{lbl}</span>
+        <select value={settings[key]} onChange={e=>setCfg(p=>({...p,[key]:isNaN(e.target.value)?e.target.value:parseInt(e.target.value)}))} style={{fontSize:11,width:key==="scanTickers"?110:80}}>{opts.map(v=><option key={v} value={v}>{v==="watchlist"?"Watchlist":v==="all"?`Todos (${ALL_TICKERS.length})`:v}</option>)}</select></div>
+      ))}
+    </div>
+    <div className="c" style={{padding:12,display:"flex",flexDirection:"column",gap:8}}>
+      <div style={{fontSize:12,fontWeight:500}}>Notificaciones</div>
+      <button onClick={async()=>{if("Notification"in window){const p=await Notification.requestPermission();if(p==="granted")new Notification("🔔 Notificaciones activadas",{body:"BYMA Trader"})}}} className="b bp" style={{fontSize:11}}>Activar Push</button>
+    </div>
+    <div className="c" style={{padding:12,display:"flex",flexDirection:"column",gap:8}}>
+      <div style={{fontSize:12,fontWeight:500}}>Watchlist ({watchlist.length})</div>
+      <div style={{display:"flex",gap:8}}><input placeholder="Agregar..." value={nt} onChange={e=>setNt(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addW()} style={{flex:1,fontSize:12}}/><button onClick={addW} className="b bp">+</button></div>
+      <div style={{display:"flex",flexWrap:"wrap",gap:4}}>{watchlist.map(t=><span key={t} style={{display:"inline-flex",alignItems:"center",gap:4,fontSize:11,padding:"4px 8px",borderRadius:6,background:"rgba(59,130,246,.1)",color:"#93c5fd",border:"1px solid rgba(59,130,246,.2)"}}>{t.replace(".BA","")}<button onClick={()=>setWl(p=>p.filter(x=>x!==t))} style={{background:"none",border:"none",color:"#93c5fd",cursor:"pointer",padding:0,fontSize:10}}>×</button></span>)}</div>
+    </div>
+    <div className="c" style={{padding:12,display:"flex",flexDirection:"column",gap:8}}>
+      <div style={{fontSize:12,fontWeight:500}}>Datos</div>
+      <button onClick={async()=>{const d={portfolio:await DB.get("portfolio"),alerts:await DB.get("alerts"),ops:await DB.get("ops"),watchlist:await DB.get("watchlist"),settings:await DB.get("settings"),date:new Date().toISOString()};const b=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=`byma-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(u)}} className="b bx" style={{width:"100%",fontSize:11}}>↓ Exportar Backup</button>
+      <button onClick={async()=>{if(!confirm("⚠️ Borrar TODO?"))return;for(const k of["portfolio","alerts","ops","watchlist","settings","signals-cache","macro-cache","quotes-cache"])await DB.del(k);location.reload()}} className="b bx" style={{width:"100%",fontSize:11,color:"#ef4444"}}>Resetear todo</button>
+    </div>
+    <div className="c" style={{padding:12,fontSize:9,color:"#4b5563"}}><div>BYMA Trader PWA v1.0</div><div>{ALL_TICKERS.length} tickers | 18 indicadores TA | Scoring ensemble</div><div>BYMA 10:30-17:00 L-V | Feriados AR | Yahoo Finance</div></div>
+  </div>);
+}
+
+ReactDOM.render(<App/>,document.getElementById('root'));
+</script>
+<script>
+if('serviceWorker' in navigator)window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').then(r=>{if('periodicSync' in r)r.periodicSync.register('byma-scan',{minInterval:30*60000}).catch(()=>{})}).catch(()=>{})});
+let dp;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;const b=document.createElement('button');b.textContent='📲 Instalar App';b.className='b bp';b.style.cssText='position:fixed;top:56px;right:12px;z-index:9999;font-size:12px;box-shadow:0 4px 20px rgba(59,130,246,.3)';b.onclick=()=>{dp.prompt();dp.userChoice.then(()=>{dp=null;b.remove()})};document.body.appendChild(b);setTimeout(()=>b.remove(),20000)});
+</script>
+</body>
+</html>
